@@ -1,0 +1,54 @@
+version: "3.7"
+
+networks:
+  mass-api:
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=mass
+      - POSTGRES_PASSWORD=123
+    volumes:
+      - ./local/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - mass-api
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3000 
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=mass
+      - DB_PASS=123
+      - DB_NAME=mass
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    links:
+      - postgres:postgres
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - mass-api
+  frontend:
+    build:
+      context: ../MASS
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - mass-api
